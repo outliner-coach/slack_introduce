@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>슬랙 업무 자동화: 워크플로와 봇 완벽 정복하기</title>
+    <style>
+        /* 폰트 임포트 */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        /* 리셋 및 기본 설정 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1a2332;
+            --secondary-color: #4ecdc4;
+            --accent-color: #ff6b6b;
+            --text-color: #2d3748;
+            --light-bg: #f7fafc;
+            --white: #ffffff;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            color: var(--text-color);
+            background: var(--light-bg);
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* 진행률 바 */
+        #progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: var(--gradient-2);
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
+
+        /* 슬라이드 컨테이너 */
+        #slides-container {
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+            height: 100vh;
+        }
+
+        /* 개별 슬라이드 */
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            scroll-snap-align: start;
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        /* 슬라이드 번호 */
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 14px;
+            color: #a0aec0;
+            font-weight: 600;
+        }
+
+        /* 표지 슬라이드 */
+        .slide.cover {
+            background: var(--gradient-1);
+            color: var(--white);
+        }
+
+        .slide.cover h1 {
+            font-size: 64px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .slide.cover .subtitle {
+            font-size: 28px;
+            font-weight: 300;
+            margin-bottom: 60px;
+            opacity: 0.9;
+        }
+
+        .slide.cover .meta {
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        /* 제목 스타일 */
+        h2 {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        h3 {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        /* 내용 컨테이너 */
+        .content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* 리스트 스타일 */
+        .content ul {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .content ul li {
+            font-size: 24px;
+            line-height: 1.8;
+            margin-bottom: 16px;
+            padding-left: 40px;
+            position: relative;
+        }
+
+        .content ul li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+            font-size: 28px;
+        }
+
+        .content ul ul {
+            margin-left: 40px;
+            margin-top: 12px;
+        }
+
+        .content ul ul li {
+            font-size: 20px;
+        }
+
+        /* 강조 박스 */
+        .highlight-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid var(--secondary-color);
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 8px;
+        }
+
+        .highlight-box h4 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .highlight-box p, .highlight-box ul {
+            font-size: 20px;
+            line-height: 1.7;
+        }
+
+        /* 다이어그램 컨테이너 */
+        .diagram {
+            margin: 40px 0;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        /* 플로우차트 스타일 */
+        .flow-chart {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .flow-box {
+            background: var(--gradient-2);
+            color: white;
+            padding: 25px 35px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            min-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+        }
+
+        .flow-arrow {
+            font-size: 32px;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        /* 단계 박스 */
+        .step-box {
+            background: white;
+            border: 2px solid var(--secondary-color);
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 20px;
+            line-height: 1.6;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-box strong {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* 비교 테이블 */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 20px;
+            text-align: left;
+            font-size: 18px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            font-size: 20px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* 네비게이션 버튼 */
+        #nav-menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 999;
+        }
+
+        #nav-toggle {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        #nav-toggle:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        #nav-sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.1);
+            transition: right 0.4s ease;
+            padding: 30px;
+            overflow-y: auto;
+            z-index: 998;
+        }
+
+        #nav-sidebar.active {
+            right: 0;
+        }
+
+        #nav-sidebar h3 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        #nav-sidebar ul {
+            list-style: none;
+        }
+
+        #nav-sidebar ul li {
+            margin-bottom: 12px;
+        }
+
+        #nav-sidebar ul li a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 16px;
+            display: block;
+            padding: 10px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        #nav-sidebar ul li a:hover {
+            background: var(--light-bg);
+            color: var(--secondary-color);
+            padding-left: 15px;
+        }
+
+        /* 키보드 힌트 */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 500;
+            opacity: 0;
+            animation: fadeInOut 4s ease;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+        }
+
+        /* 아이콘 스타일 */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .icon-item {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .icon-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .icon-item h4 {
+            font-size: 22px;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .icon-item p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #4a5568;
+        }
+
+        .icon-item .emoji {
+            font-size: 40px;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* Section 구분자 */
+        .section-divider {
+            background: var(--gradient-2);
+            color: white;
+            padding: 40px;
+            text-align: center;
+            font-size: 48px;
+            font-weight: 700;
+        }
+
+        /* 인쇄 스타일 */
+        @media print {
+            .slide {
+                page-break-after: always;
+                min-height: auto;
+                padding: 40px;
+            }
+            #progress-bar, #nav-menu, .keyboard-hint, .slide-number {
+                display: none;
+            }
+        }
+
+        /* 반응형 */
+        @media (max-width: 1024px) {
+            .slide {
+                padding: 40px 40px;
+            }
+            h2 {
+                font-size: 36px;
+            }
+            .content ul li {
+                font-size: 20px;
+            }
+            .icon-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 강조 텍스트 */
+        strong {
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        em {
+            color: var(--secondary-color);
+            font-style: normal;
+            font-weight: 600;
+        }
+
+        /* 섹션 태그 */
+        .section-tag {
+            display: inline-block;
+            background: var(--secondary-color);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="progress-bar"></div>
+    
+    <!-- 네비게이션 메뉴 -->
+    <div id="nav-menu">
+        <button id="nav-toggle">📑 목차</button>
+    </div>
+
+    <div id="nav-sidebar">
+        <h3>목차</h3>
+        <ul>
+            <li><a href="#slide-1">표지</a></li>
+            <li><a href="#slide-2">오늘 배울 내용</a></li>
+            <li><a href="#slide-3">학습 목표</a></li>
+            <li><a href="#slide-4">워크플로 소개</a></li>
+            <li><a href="#slide-5">변수 활용</a></li>
+            <li><a href="#slide-6">사례 1: 매주 알림</a></li>
+            <li><a href="#slide-7">사례 2: 명령어 버튼</a></li>
+            <li><a href="#slide-8">사례 3: 이모지 수집</a></li>
+            <li><a href="#slide-9">워크플로의 한계</a></li>
+            <li><a href="#slide-9-1">기본 개념 소개</a></li>
+            <li><a href="#slide-10">슬랙봇 소개</a></li>
+            <li><a href="#slide-11">봇 제작 프로세스</a></li>
+            <li><a href="#slide-12">4가지 핵심 기능</a></li>
+            <li><a href="#slide-13">봇 토큰 vs 유저 토큰</a></li>
+            <li><a href="#slide-14">사례 1: 구글시트 알림</a></li>
+            <li><a href="#slide-15">사례 2: 키워드 감지</a></li>
+            <li><a href="#slide-16">사례 3: 양방향 상호작용</a></li>
+            <li><a href="#slide-17">실전 케이스 스터디</a></li>
+            <li><a href="#slide-18">워크플로 vs 봇</a></li>
+            <li><a href="#slide-19">핵심 요약</a></li>
+            <li><a href="#slide-20">Q&A</a></li>
+        </ul>
+    </div>
+
+    <div id="slides-container">
+        <!-- 슬라이드 1: 표지 -->
+        <section class="slide cover" id="slide-1">
+            <div class="content">
+                <h1>🚀 슬랙 업무 자동화:<br>워크플로와 봇 완벽 정복하기</h1>
+                <p class="subtitle">반복 업무는 줄이고, 중요한 일에 집중하는 방법</p>
+                <p class="meta">📅 2025년 1월<br>💼 사내 교육 자료</p>
+            </div>
+        </section>
+
+        <!-- 슬라이드 2: 오늘 배울 내용 -->
+        <section class="slide" id="slide-2">
+            <div class="content">
+                <h2>📋 오늘 배울 내용 (Agenda)</h2>
+                <ul>
+                    <li><strong>Icebreaking:</strong> 우리는 왜 슬랙 자동화가 필요할까요?</li>
+                    <li><strong>Part 1. (No-Code) 슬랙 워크플로</strong>
+                        <ul>
+                            <li>워크플로란?</li>
+                            <li>핵심 기능: '변수' 활용법</li>
+                            <li>실전 사례 1, 2, 3 (알림, 명령어, 이모지)</li>
+                            <li>워크플로의 한계</li>
+                        </ul>
+                    </li>
+                    <li><strong>Part 2. (Pro-Code) 슬랙봇</strong>
+                        <ul>
+                            <li>슬랙봇이란? (워크플로와의 차이)</li>
+                            <li>봇 제작 프로세스 및 4가지 핵심 기능</li>
+                            <li>[FAQ] 봇 토큰 vs 유저 토큰</li>
+                            <li>실전 사례 1, 2, 3 (구글시트, 키워드, 양방향 상호작용)</li>
+                        </ul>
+                    </li>
+                    <li><strong>Part 3. 요약 및 Q&A</strong>
+                        <ul>
+                            <li>무엇을 사용해야 할까요? (Workflow vs. Bot)</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="slide-number">2 / 29</div>
+        </section>
+
+        <!-- 슬라이드 3: 학습 목표 -->
+        <section class="slide" id="slide-3">
+            <div class="content">
+                <h2>🎯 학습 목표</h2>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">🏁</span>
+                        <h4>워크플로 활용</h4>
+                        <p>코딩 없이 <strong>워크플로</strong>를 활용해 간단한 업무 자동화를 구현할 수 있습니다.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🤖</span>
+                        <h4>슬랙봇 이해</h4>
+                        <p><strong>슬랙봇</strong>의 작동 원리와 핵심 기능을 이해하고, 제작 과정을 파악합니다.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">💡</span>
+                        <h4>실전 사례</h4>
+                        <p>사내 실제 사례를 통해 업무에 바로 적용할 아이디어를 얻어갑니다.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">⚡</span>
+                        <h4>효율성 향상</h4>
+                        <p>반복적인 단순 작업을 줄여 더 중요한 일에 집중할 수 있게 됩니다.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">3 / 29</div>
+        </section>
+
+        <!-- Part 1 구분자 -->
+        <section class="slide section-divider" id="slide-part1">
+            <h2>Part 1<br>슬랙 워크플로<br>(No-Code)</h2>
+        </section>
+
+        <!-- 슬라이드 4: 워크플로 소개 -->
+        <section class="slide" id="slide-4">
+            <div class="content">
+                <span class="section-tag">No-Code</span>
+                <h2>🏁 슬랙 워크플로란?</h2>
+                <div class="highlight-box">
+                    <h4>정의</h4>
+                    <p>코딩 지식 없이, 슬랙 내에서 반복적인 업무를 자동화하는 <strong>'레고 블록'</strong> 같은 기능입니다.</p>
+                </div>
+                <ul>
+                    <li><strong>누가 사용하나요?</strong> 개발자가 아니어도 <em>누구나</em> 만들 수 있습니다.
+                        <ul>
+                            <li>기획자, 마케터, PM, 운영 담당자 등</li>
+                        </ul>
+                    </li>
+                    <li><strong>핵심 구성:</strong>
+                        <ul>
+                            <li><strong>트리거 (Trigger):</strong> 워크플로를 "시작"시키는 조건<br>(예: 특정 시간, 이모지 클릭, 채널 입장)</li>
+                            <li><strong>액션 (Action):</strong> "수행"할 동작<br>(예: 메시지 보내기, 폼 전송, 구글시트 추가)</li>
+                        </ul>
+                    </li>
+                    <li><strong>위치:</strong> <em>슬랙 메뉴 > 도구 > 워크플로 빌더</em></li>
+                </ul>
+            </div>
+            <div class="slide-number">4 / 29</div>
+        </section>
+
+        <!-- 슬라이드 5: 변수 활용 -->
+        <section class="slide" id="slide-5">
+            <div class="content">
+                <span class="section-tag">핵심 개념</span>
+                <h2>🧩 워크플로의 핵심: '변수' 활용</h2>
+                <div class="highlight-box">
+                    <h4>'변수'란?</h4>
+                    <p>이전 단계의 정보를 담아 다음 단계로 전달하는 <strong>'데이터 보관함'</strong>입니다.</p>
+                    <p style="margin-top: 15px;"><strong>예시:</strong> 사용자가 폼에 입력한 '이름'을 채널 메시지에 "OOO님이 휴가를 신청했습니다."라고 표시할 때 사용.</p>
+                </div>
+                <h3>활용 방법 (3단계)</h3>
+                <div class="flow-chart">
+                    <div class="flow-box">1️⃣ 데이터 생성<br>(트리거)</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">2️⃣ 변수 삽입<br>(액션)</div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-box">3️⃣ 메시지 전송<br>(결과)</div>
+                </div>
+                <div class="step-box">
+                    <strong>Step 1:</strong> '폼 제출' 트리거에서 '이름' 입력란을 만듭니다.
+                </div>
+                <div class="step-box">
+                    <strong>Step 2:</strong> '메시지 보내기' 단계에서 '변수 삽입' 버튼을 클릭.
+                </div>
+                <div class="step-box">
+                    <strong>Step 3:</strong> '폼에서 응답한 사람', '이름' 입력값 등 원하는 변수를 선택하여 메시지 본문에 추가합니다.
+                </div>
+            </div>
+            <div class="slide-number">5 / 29</div>
+        </section>
+
+        <!-- 슬라이드 6: 사례 1 -->
+        <section class="slide" id="slide-6">
+            <div class="content">
+                <span class="section-tag">실전 사례 1</span>
+                <h2>💡 매주 알림 주는 워크플로</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p>매주 금요일 오후 4시, <strong>'주간보고'</strong> 채널에 리마인더 알림 보내기</p>
+                </div>
+                <h3>작동 원리</h3>
+                <div class="diagram">
+                    <div class="flow-chart">
+                        <div class="flow-box">⏰<br>예약된 시간<br>(매주 금 16:00)</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">📢<br>메시지 보내기<br>(#주간보고)</div>
+                    </div>
+                </div>
+                <h3>설정 방법</h3>
+                <div class="step-box">
+                    <strong>트리거:</strong> <em>예약된 날짜 및 시간</em><br>
+                    → 반복: 매주 / 요일: 금요일 / 시간: 오후 4:00
+                </div>
+                <div class="step-box">
+                    <strong>액션:</strong> <em>메시지 보내기</em><br>
+                    → 수신자: #주간보고 채널<br>
+                    → 메시지: "🔔 주간보고서 마감 1시간 전입니다! 잊지 말고 제출해 주세요."
+                </div>
+            </div>
+            <div class="slide-number">6 / 29</div>
+        </section>
+
+        <!-- 슬라이드 7: 사례 2 -->
+        <section class="slide" id="slide-7">
+            <div class="content">
+                <span class="section-tag">실전 사례 2</span>
+                <h2>💡 명령어로 안내/버튼 제공</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p><strong>/복지</strong> 명령어를 입력하면, 복지 혜택 안내와 관련 링크 버튼이 나오게 하기</p>
+                </div>
+                <h3>작동 원리</h3>
+                <div class="diagram">
+                    <div class="flow-chart">
+                        <div class="flow-box">⌨️<br>/복지 입력<br>(바로가기)</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">💬<br>DM 전송<br>(본인에게)</div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box">🔘<br>버튼 표시<br>(링크)</div>
+                    </div>
+                </div>
+                <h3>설정 방법</h3>
+                <div class="step-box">
+                    <strong>트리거:</strong> <em>바로 가기</em> (단축키 메뉴)<br>
+                    → 바로 가기 이름: /복지
+                </div>
+                <div class="step-box">
+                    <strong>액션:</strong> <em>메시지 보내기</em><br>
+                    → 수신자: (워크플로를 실행한 사람)에게만 DM으로 전송<br>
+                    → 메시지: "복지 혜택 안내입니다. 원하시는 항목을 선택하세요."<br>
+                    → 버튼 1: "휴가 규정 확인" (URL: 사내 규정 링크)<br>
+                    → 버튼 2: "경조사비 신청" (URL: 신청 폼 링크)
+                </div>
+            </div>
+            <div class="slide-number">7 / 29</div>
+        </section>
+
+        <!-- 슬라이드 8: 사례 3 -->
+        <section class="slide" id="slide-8">
+            <div class="content">
+                <span class="section-tag">실전 사례 3</span>
+                <h2>💡 이모지 → 정보 수집 → 구글시트</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p>공지 메시지에 <strong>'✋'</strong> 이모지를 누르면 신청자 정보(이름, 이메일)를 구글시트에 자동 기록</p>
+                </div>
+                <h3>작동 원리</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 20px;">
+                        <div class="flow-box">✋ 이모지 클릭</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">→</div>
+                        <div class="flow-box">📝 폼 전송 (DM)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">→</div>
+                        <div class="flow-box">📊 구글시트에 자동 기록</div>
+                    </div>
+                </div>
+                <h3>설정 방법</h3>
+                <div class="step-box">
+                    <strong>트리거:</strong> <em>이모지 반응</em><br>
+                    → 특정 채널의 특정 메시지에 ✋ 이모지가 추가될 때
+                </div>
+                <div class="step-box">
+                    <strong>액션 1:</strong> <em>양식(폼) 보내기</em><br>
+                    → 수신자: (이모지를 누른 사람)에게 DM<br>
+                    → 폼 내용: 이름, 이메일, 부서 등
+                </div>
+                <div class="step-box">
+                    <strong>액션 2:</strong> <em>Google 스프레드시트에 행 추가</em><br>
+                    → 신청자 열 ← (변수) 이모지를 누른 사람<br>
+                    → 이름 열 ← (변수) 폼에서 입력한 '이름'<br>
+                    → 이메일 열 ← (변수) 폼에서 입력한 '이메일'
+                </div>
+            </div>
+            <div class="slide-number">8 / 29</div>
+        </section>
+
+        <!-- 슬라이드 9: 워크플로의 한계 -->
+        <section class="slide" id="slide-9">
+            <div class="content">
+                <h2>🚧 슬랙 워크플로의 한계</h2>
+                <div class="highlight-box" style="background: linear-gradient(135deg, #ff6b6b15 0%, #ff8e8e15 100%); border-left-color: var(--accent-color);">
+                    <h4>워크플로는 "정해진, 간단한" 자동화에 강력합니다. 하지만...</h4>
+                </div>
+                <ul>
+                    <li><strong>❌ 복잡한 로직 불가</strong>
+                        <ul>
+                            <li><em>IF... ELSE...</em> (만약 A이면 B, 아니면 C) 같은 조건 분기나 반복(Loop)이 어렵습니다.</li>
+                        </ul>
+                    </li>
+                    <li><strong>❌ 양방향 상호작용의 한계</strong>
+                        <ul>
+                            <li>봇처럼 사용자와 대화를 주고받거나, 버튼 클릭 시 원본 메시지를 <em>수정</em>하는 등 세밀한 제어가 불가능합니다.</li>
+                        </ul>
+                    </li>
+                    <li><strong>❌ 제한된 연동</strong>
+                        <ul>
+                            <li>구글시트, Jira 등 기본 연동 앱 외에 사내 DB나 복잡한 외부 API 연동은 불가능합니다.</li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="highlight-box" style="margin-top: 40px;">
+                    <h4>Q. 더 복잡하고 유연한 자동화가 필요하다면?</h4>
+                    <p style="font-size: 28px; color: var(--secondary-color); font-weight: 700; margin-top: 15px;">
+                        A. ➡️ Part 2. 슬랙봇 (Pro-Code)이 필요합니다!
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">9 / 29</div>
+        </section>
+
+        <!-- Part 2 구분자 -->
+        <section class="slide section-divider" id="slide-part2">
+            <h2>Part 2<br>슬랙봇<br>(Pro-Code)</h2>
+        </section>
+
+        <!-- 슬라이드 9-1: 기본 개념 소개 -->
+        <section class="slide" id="slide-9-1">
+            <div class="content">
+                <span class="section-tag">기본 개념</span>
+                <h2>💻 알아두면 좋은 기본 개념</h2>
+                <p style="font-size: 22px; text-align: center; margin-bottom: 40px; color: #4a5568;">
+                    슬랙봇을 이해하기 위해 필요한 3가지 핵심 개념
+                </p>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">👤</span>
+                        <h4>클라이언트 (Client)</h4>
+                        <p><strong>사용자가 보는 화면</strong></p>
+                        <p style="margin-top: 10px;">웹 브라우저, 슬랙 앱 등 우리가 직접 사용하는 프로그램입니다.</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 슬랙 메신저 화면</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🖥️</span>
+                        <h4>서버 (Server)</h4>
+                        <p><strong>뒤에서 일하는 컴퓨터</strong></p>
+                        <p style="margin-top: 10px;">요청을 받아서 처리하고 결과를 돌려주는 컴퓨터입니다. 24시간 켜져 있습니다.</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 슬랙봇 프로그램이 실행되는 곳</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">📊</span>
+                        <h4>데이터베이스 (Database)</h4>
+                        <p><strong>정보를 저장하는 창고</strong></p>
+                        <p style="margin-top: 10px;">데이터를 체계적으로 저장하고 필요할 때 꺼내 쓸 수 있게 해주는 시스템입니다.</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 구글시트, MySQL 등</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔗</span>
+                        <h4>이들의 관계</h4>
+                        <p><strong>어떻게 연결되나요?</strong></p>
+                        <p style="margin-top: 10px;">① 클라이언트가 서버에 요청 → ② 서버가 데이터베이스에서 정보 조회 → ③ 서버가 클라이언트에 결과 전송</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 투표 버튼 클릭 → 서버 처리 → 결과 업데이트</p>
+                    </div>
+                </div>
+                <div class="diagram" style="margin-top: 30px;">
+                    <div class="flow-chart">
+                        <div class="flow-box">👤 클라이언트<br>(슬랙 화면)</div>
+                        <div class="flow-arrow">↔</div>
+                        <div class="flow-box">🖥️ 서버<br>(봇 프로그램)</div>
+                        <div class="flow-arrow">↔</div>
+                        <div class="flow-box">📊 데이터베이스<br>(구글시트 등)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">9.5 / 29</div>
+        </section>
+
+        <!-- 슬라이드 10: 슬랙봇 소개 -->
+        <section class="slide" id="slide-10">
+            <div class="content">
+                <span class="section-tag">Pro-Code</span>
+                <h2>🤖 슬랙봇이란?</h2>
+                <div class="highlight-box">
+                    <h4>정의</h4>
+                    <p>Slack API를 활용해 직접 개발하는 <strong>커스텀 애플리케이션</strong>입니다.</p>
+                </div>
+                <h3>특징</h3>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">💪</span>
+                        <h4>강력하고 유연함</h4>
+                        <p>워크플로보다 <strong>훨씬 강력하고 유연</strong>합니다.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🖥️</span>
+                        <h4>서버 필요</h4>
+                        <p><strong>서버</strong>가 필요합니다.<br>(AWS, GCP 또는 사내 서버)</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">👨‍💻</span>
+                        <h4>코딩 필요</h4>
+                        <p><strong>코딩</strong>이 필요합니다.<br>(Python, Node.js, Java...)</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔗</span>
+                        <h4>자유로운 연동</h4>
+                        <p>외부 서비스(사내 시스템, DB 등)와 <strong>자유로운 연동</strong>이 가능합니다.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">10 / 29</div>
+        </section>
+
+        <!-- 슬라이드 10-1: 비개발자를 위한 팁 -->
+        <section class="slide" id="slide-10-1">
+            <div class="content">
+                <span class="section-tag">비개발자를 위한 팁</span>
+                <h2>💡 비개발자도 슬랙봇을 만들 수 있을까요?</h2>
+                
+                <div class="highlight-box" style="background: linear-gradient(135deg, #4ecdc415 0%, #44a08d15 100%); border-left-color: var(--secondary-color);">
+                    <h4>네! 가능합니다! 🎉</h4>
+                    <p style="font-size: 20px;">세 가지 도구의 조합으로 서버와 데이터베이스 없이 슬랙봇을 만들 수 있습니다.</p>
+                </div>
+
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">🤖</span>
+                        <h4>1. AI 활용 (코드 작성)</h4>
+                        <p><strong>ChatGPT, Claude 등</strong></p>
+                        <p style="margin-top: 10px;">
+                            "구글시트에서 체크박스 클릭하면 슬랙에 메시지 보내는 코드 작성해줘"<br>
+                            → AI가 코드를 생성해줍니다!
+                        </p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);">
+                            <strong>장점:</strong> 코딩 몰라도 자연어로 요청 가능
+                        </p>
+                    </div>
+                    
+                    <div class="icon-item">
+                        <span class="emoji">🖥️</span>
+                        <h4>2. Google Apps Script (서버)</h4>
+                        <p><strong>구글에서 제공하는 무료 서버</strong></p>
+                        <p style="margin-top: 10px;">
+                            별도 서버 없이 구글 클라우드에서 24시간 실행<br>
+                            구글시트 메뉴에서 바로 접근 가능<br>
+                            설치나 설정 불필요
+                        </p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);">
+                            <strong>장점:</strong> 무료, 간편, 구글 서비스와 쉽게 연동
+                        </p>
+                    </div>
+                    
+                    <div class="icon-item">
+                        <span class="emoji">📊</span>
+                        <h4>3. 구글시트 (데이터베이스)</h4>
+                        <p><strong>익숙한 스프레드시트 = 데이터베이스</strong></p>
+                        <p style="margin-top: 10px;">
+                            복잡한 DB 대신 구글시트 사용<br>
+                            엑셀처럼 직관적으로 데이터 확인/수정<br>
+                            실시간 협업 가능
+                        </p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);">
+                            <strong>장점:</strong> 누구나 쉽게 관리, 시각적으로 확인
+                        </p>
+                    </div>
+                    
+                    <div class="icon-item">
+                        <span class="emoji">⚡</span>
+                        <h4>실제 사례</h4>
+                        <p><strong>이 조합으로 만들어진 봇들</strong></p>
+                        <p style="margin-top: 10px;">
+                            • Dinner Poll (투표 봇)<br>
+                            • Review Scrapper (리뷰 수집)<br>
+                            • Slack DM Sender (DM 발송)
+                        </p>
+                        <p style="margin-top: 10px; color: var(--accent-color);">
+                            <strong>모두 이 방식으로 만들어졌습니다!</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="diagram" style="margin-top: 30px;">
+                    <h3 style="text-align: center; font-size: 24px; margin-bottom: 20px;">비개발자의 슬랙봇 만들기 여정</h3>
+                    <div class="flow-chart">
+                        <div class="flow-box" style="background: var(--gradient-1);">
+                            💭 아이디어<br>(이런 봇 있으면 좋겠다)
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" style="background: var(--gradient-2);">
+                            🤖 AI에게 요청<br>(코드 작성)
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" style="background: var(--gradient-1);">
+                            📋 구글시트 + GAS<br>(붙여넣기)
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" style="background: var(--gradient-2);">
+                            ✅ 완성!<br>(배포 & 사용)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px; text-align: center;">
+                    <h4 style="font-size: 24px;">💪 핵심 메시지</h4>
+                    <p style="font-size: 20px; margin-top: 15px;">
+                        <strong>"개발자가 아니어도 AI + 구글 도구만으로 충분히 슬랙봇을 만들 수 있습니다!"</strong>
+                    </p>
+                    <p style="font-size: 18px; margin-top: 10px; color: #4a5568;">
+                        오늘 배운 케이스 스터디들이 바로 이 방식으로 만들어진 실제 사례입니다.
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">10.5 / 29</div>
+        </section>
+
+        <!-- 슬라이드 11: 봇 제작 프로세스 -->
+        <section class="slide" id="slide-11">
+            <div class="content">
+                <span class="section-tag">제작 프로세스</span>
+                <h2>🛠️ 봇 만드는 법 (6단계)</h2>
+                <div class="step-box">
+                    <strong>1. [Slack] 앱 생성</strong><br>
+                    api.slack.com > Your Apps > Create New App (From scratch)
+                </div>
+                <div class="step-box">
+                    <strong>2. [Slack] 기능 선택</strong><br>
+                    만들고 싶은 봇의 유형에 따라 필요한 기능을 활성화합니다. (다음 슬라이드)
+                </div>
+                <div class="step-box">
+                    <strong>3. [Server] 로직 개발</strong><br>
+                    선택한 기능을 처리할 서버 코드를 작성합니다.
+                </div>
+                <div class="step-box">
+                    <strong>4. [Slack] 권한(Scope) 설정</strong><br>
+                    봇이 행동(메시지 쓰기, 파일 읽기 등)할 수 있도록 OAuth & Permissions에서 권한을 부여합니다.
+                </div>
+                <div class="step-box">
+                    <strong>5. [Slack] 앱 설치</strong><br>
+                    워크스페이스에 봇을 설치하고 <em>봇 유저 토큰(xoxb-...)</em>을 발급받습니다.
+                </div>
+                <div class="step-box">
+                    <strong>6. [Server] 토큰 적용</strong><br>
+                    발급받은 토큰을 서버 코드에 적용하여 연동을 완료합니다.
+                </div>
+            </div>
+            <div class="slide-number">11 / 29</div>
+        </section>
+
+        <!-- 슬라이드 12: 4가지 핵심 기능 -->
+        <section class="slide" id="slide-12">
+            <div class="content">
+                <span class="section-tag">핵심 기능</span>
+                <h2>⚙️ 봇의 4가지 핵심 기능</h2>
+                <p style="font-size: 22px; margin-bottom: 30px; text-align: center; color: #4a5568;">
+                    봇이 "무엇을" 하느냐에 따라 필요한 기능(설정)이 다릅니다.
+                </p>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">📨</span>
+                        <h4>1. Incoming Webhook</h4>
+                        <p><strong>기능:</strong> 외부(내 서버)에서 슬랙 채널로 메시지를 보내기만 할 때 (단방향)</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 시스템 장애 알림, 배포 완료 알림</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">⌨️</span>
+                        <h4>2. Slash Commands</h4>
+                        <p><strong>기능:</strong> 사용자가 /명령어를 입력하여 봇을 호출할 때</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> /배포 [서비스명], /회의실 예약</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">👂</span>
+                        <h4>3. Event Subscriptions</h4>
+                        <p><strong>기능:</strong> 봇이 채널의 이벤트를 항상 듣고(Listen) 반응할 때</p>
+                        <p style="margin-top: 10px; color: var(--secondary-color);"><strong>예시:</strong> 특정 키워드 감지, 이모지 반응, 채널 입장 감지</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔑</span>
+                        <h4>4. Bot User Token</h4>
+                        <p><strong>기능:</strong> 봇이 스스로 행동(메시지 쓰기, 읽기, 수정)하기 위한 만능 열쇠</p>
+                        <p style="margin-top: 10px; color: var(--accent-color);"><strong>필수:</strong> 위 2, 3번 기능을 사용하거나, 봇이 능동적으로 메시지를 보낼 때 반드시 필요</p>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">12 / 29</div>
+        </section>
+
+        <!-- 슬라이드 13: FAQ 토큰 -->
+        <section class="slide" id="slide-13">
+            <div class="content">
+                <span class="section-tag">FAQ</span>
+                <h2>🕵️‍♀️ 봇 유저 토큰 vs 유저 토큰</h2>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>구분</th>
+                            <th>Bot User Token (봇 토큰)</th>
+                            <th>User Token (유저 토큰)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>시작 문자</td>
+                            <td><code>xoxb-</code></td>
+                            <td><code>xoxp-</code></td>
+                        </tr>
+                        <tr>
+                            <td>주체</td>
+                            <td>봇 (앱) 자신</td>
+                            <td>봇을 설치/사용한 특정 유저</td>
+                        </tr>
+                        <tr>
+                            <td>권한</td>
+                            <td>봇에게 부여된 Scopes 만큼만 행동<br>(예: chat:write, reactions:read)</td>
+                            <td>해당 유저가 가진 모든 권한을 위임받아 행동<br>(유저의 비공개 채널 접근, 유저 대신 글쓰기)</td>
+                        </tr>
+                        <tr>
+                            <td>특징</td>
+                            <td>사용자와 무관하게 봇이 독립적으로 작동</td>
+                            <td>매우 강력하고 민감한 권한</td>
+                        </tr>
+                        <tr>
+                            <td>용도</td>
+                            <td><strong>99%의 일반적인 봇 활동</strong><br>(알림, 응답, 키워드 감지 등)</td>
+                            <td>유저 개인을 대신하는 작업<br>(개인 캘린더 연동, 개인 DM 정리)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="highlight-box" style="margin-top: 30px;">
+                    <h4>💡 결론</h4>
+                    <p style="font-size: 22px;">특별한 경우가 아니면 항상 <strong style="color: var(--accent-color);">봇 유저 토큰(xoxb-)</strong>을 사용해야 합니다.</p>
+                </div>
+            </div>
+            <div class="slide-number">13 / 29</div>
+        </section>
+
+        <!-- 슬라이드 14: 사례 1 구글시트 -->
+        <section class="slide" id="slide-14">
+            <div class="content">
+                <span class="section-tag">실전 사례 1</span>
+                <h2>📊 구글시트 업데이트 → 슬랙 알림</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p>특정 구글시트가 수정되면, 변경 내용을 슬랙 채널에 알림</p>
+                </div>
+                <div class="highlight-box" style="background: #e6fffa; border-left-color: var(--secondary-color);">
+                    <h4>필요 기능</h4>
+                    <p><em>Incoming Webhook</em> (가장 간단) 또는 <em>Bot Token (chat:write)</em></p>
+                </div>
+                <h3>작동 원리 (Google Apps Script 활용)</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 15px;">
+                        <div class="flow-box">📊 구글시트 수정 발생</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">⚡ onEdit(e) 트리거 실행</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📝 변경 정보 수집 (셀, 값)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📤 Webhook URL로 POST 전송</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">💬 슬랙 채널에 알림 표시</div>
+                    </div>
+                </div>
+                <div class="step-box">
+                    <strong>핵심:</strong> Google Apps Script의 <em>onEdit</em> 트리거와 <em>UrlFetchApp.fetch()</em>를 사용하여 슬랙에 자동 알림
+                </div>
+            </div>
+            <div class="slide-number">14 / 29</div>
+        </section>
+
+        <!-- 슬라이드 15: 사례 2 키워드 감지 -->
+        <section class="slide" id="slide-15">
+            <div class="content">
+                <span class="section-tag">실전 사례 2</span>
+                <h2>📊 키워드/이모지 감지 → 데이터 전송</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p><strong>#문의</strong> 채널에 '장애' 키워드가 포함되면 → '🚨' 이모지 달기 & <strong>#긴급대응</strong> 채널에 해당 내용 전송</p>
+                </div>
+                <div class="highlight-box" style="background: #e6fffa; border-left-color: var(--secondary-color);">
+                    <h4>필요 기능</h4>
+                    <p><em>Event Subscription</em> + <em>Bot Token (chat:write, reactions:write)</em></p>
+                </div>
+                <h3>작동 원리 (서버 필요)</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 15px;">
+                        <div class="flow-box">👤 유저가 "로그인 장애 발생!" 메시지 작성</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📡 Slack이 이벤트를 내 서버로 전송</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">🔍 서버가 "장애" 키워드 확인</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">🚨 원본 글에 이모지 추가 (reactions.add)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📢 #긴급대응 채널에 알림 전송</div>
+                    </div>
+                </div>
+                <div class="step-box">
+                    <strong>핵심:</strong> 봇이 채널의 모든 메시지를 실시간으로 듣고(Listen), 특정 조건에 따라 자동으로 반응
+                </div>
+            </div>
+            <div class="slide-number">15 / 29</div>
+        </section>
+
+        <!-- 슬라이드 16: 사례 3 양방향 -->
+        <section class="slide" id="slide-16">
+            <div class="content">
+                <span class="section-tag">실전 사례 3 (고급)</span>
+                <h2>📊 체크박스 → 양방향 상호작용</h2>
+                <div class="highlight-box">
+                    <h4>목표</h4>
+                    <p>① 구글시트 '승인' 체크박스 클릭 → ② 슬랙 채널에 '승인 요청' 글 + '확인' 버튼 전송 → ③ 관리자가 '확인' 버튼 클릭 → ④ 원본 글에 '확인자(@admin)' 태그 & 구글시트 '확인자' 셀에 이름 업데이트</p>
+                </div>
+                <div class="highlight-box" style="background: #fff5f5; border-left-color: var(--accent-color);">
+                    <h4>필요 기능 (모든 기능!)</h4>
+                    <p><em>Bot Token</em>, <em>Event Subscription</em> (버튼 클릭 감지), <em>Google Apps Script</em>, <em>Google Sheets API</em></p>
+                </div>
+                <h3>작동 원리 (개념도)</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 12px; font-size: 18px;">
+                        <div class="flow-box">📊 구글시트 체크박스 클릭 (onEdit)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">💬 슬랙에 버튼 포함된 글 전송</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">👆 사용자가 '확인' 버튼 클릭</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📡 이벤트가 서버로 전송 (누가 눌렀는지 포함)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">✏️ 원본 메시지 수정 (chat.update)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📊 구글시트에 확인자 이름 업데이트</div>
+                    </div>
+                </div>
+                <div class="step-box">
+                    <strong>핵심:</strong> 슬랙과 구글시트가 <em>실시간 양방향</em>으로 연동되어, 버튼 클릭 하나로 모든 시스템이 자동 업데이트
+                </div>
+            </div>
+            <div class="slide-number">16 / 29</div>
+        </section>
+
+        <!-- 슬라이드 17: 케이스 1-1 Dinner Poll 개요 -->
+        <section class="slide" id="slide-17">
+            <div class="content">
+                <span class="section-tag">실전 케이스 1</span>
+                <h2>🗳️ Case Study 1: Dinner Poll (투표 봇)</h2>
+                
+                <div class="highlight-box">
+                    <h4>📌 프로젝트 개요</h4>
+                    <p style="font-size: 20px;">
+                        팀원들이 저녁 메뉴를 투표로 결정할 수 있는 슬랙 봇<br>
+                        구글시트에서 간단히 설정하면 슬랙에 투표가 자동 생성됩니다.
+                    </p>
+                </div>
+
+                <div class="icon-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="icon-item">
+                        <span class="emoji">🎯</span>
+                        <h4>해결하려는 문제</h4>
+                        <p>• 매번 저녁 메뉴 결정할 때 대화가 길어짐<br>
+                           • 누가 뭘 선택했는지 파악 어려움<br>
+                           • 마감 시간 관리가 수동적</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">✨</span>
+                        <h4>제공하는 해결책</h4>
+                        <p>• 버튼으로 간편하게 투표<br>
+                           • 실시간으로 결과 확인<br>
+                           • 자동 마감 처리</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">사용된 기술 스택</h3>
+                <div class="step-box">
+                    <strong>🛠️ 서버:</strong> <em>Google Apps Script</em> (무료 클라우드 서버)<br>
+                    <strong>📊 데이터베이스:</strong> <em>구글시트</em> (투표 설정 및 결과 저장)<br>
+                    <strong>🔑 슬랙 기능:</strong> <em>Bot User Token</em> (메시지 전송/수정), <em>Event Subscription</em> (버튼 클릭 감지)<br>
+                    <strong>🎨 UI:</strong> <em>Block Kit</em> (버튼, 카운터, 참여자 목록)
+                </div>
+
+                <h3 style="margin-top: 30px;">사용자 플로우</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 15px;">
+                        <div class="flow-box">1️⃣ 관리자가 구글시트에 투표 정보 입력<br>(제목, 선택지, 마감시간, 채널)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">2️⃣ 체크박스 클릭 → 슬랙 투표 메시지 자동 생성</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">3️⃣ 팀원들이 버튼 클릭하여 투표</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">4️⃣ 실시간 결과 업데이트 (참여자 이름 표시)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">5️⃣ 마감 시간 되면 자동으로 투표 종료</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">17 / 29</div>
+        </section>
+
+        <!-- 슬라이드 18: 케이스 1-2 Dinner Poll 작동 원리 -->
+        <section class="slide" id="slide-18">
+            <div class="content">
+                <span class="section-tag">실전 케이스 1</span>
+                <h2>🗳️ Dinner Poll - 작동 원리 상세</h2>
+
+                <h3>핵심 기능별 설명</h3>
+
+                <div class="step-box">
+                    <strong>1️⃣ onEdit 트리거 (투표 생성)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 구글시트에서 "송부" 체크박스를 체크하면 자동 실행<br>
+                        • 해당 행의 데이터(제목, 선택지, 마감시간 등)를 읽어옴<br>
+                        • 고유한 pollId 생성으로 중복 투표 방지<br>
+                        • 슬랙 <code>chat.postMessage</code> API 호출하여 투표 메시지 전송
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>2️⃣ doPost 웹훅 (버튼 클릭 처리)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 슬랙에서 버튼 클릭 시 스크립트의 doPost 함수가 호출됨<br>
+                        • LockService로 동시 접근 제어 (충돌 방지)<br>
+                        • 구글시트에서 투표 결과 JSON 데이터 조회/업데이트<br>
+                        • 중복 투표 시 기존 투표 취소 로직 포함<br>
+                        • 슬랙 <code>chat.update</code> API로 원본 메시지 수정 (실시간 업데이트)
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>3️⃣ checkDeadlines 트리거 (자동 마감)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 시간 기반 트리거로 주기적 실행 (예: 1분마다)<br>
+                        • 모든 투표의 마감 시간 확인<br>
+                        • 마감된 투표는 버튼 제거 및 "🔒 마감" 표시 추가<br>
+                        • 시트에 "[마감됨]" 태그 추가하여 재처리 방지
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 30px;">데이터 흐름 다이어그램</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="justify-content: space-between;">
+                        <div class="flow-box" style="min-width: 150px;">📊<br>구글시트<br>(설정 & 결과)</div>
+                        <div class="flow-arrow">↔</div>
+                        <div class="flow-box" style="min-width: 150px;">🖥️<br>GAS<br>(로직 처리)</div>
+                        <div class="flow-arrow">↔</div>
+                        <div class="flow-box" style="min-width: 150px;">💬<br>Slack<br>(UI & 상호작용)</div>
+                    </div>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px;">
+                    <h4>🔍 사용된 슬랙 API</h4>
+                    <p style="font-size: 18px;">
+                        • <strong>chat.postMessage</strong>: 새 투표 메시지 전송<br>
+                        • <strong>chat.update</strong>: 투표 결과 실시간 업데이트<br>
+                        • <strong>chat.postEphemeral</strong>: 개인에게만 보이는 에러 메시지 전송
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">18 / 29</div>
+        </section>
+
+        <!-- 슬라이드 19: 케이스 1-3 Dinner Poll 핵심 배움 -->
+        <section class="slide" id="slide-19">
+            <div class="content">
+                <span class="section-tag">실전 케이스 1</span>
+                <h2>🗳️ Dinner Poll - 핵심 포인트 & 배운 점</h2>
+
+                <h3>핵심 코드 개념</h3>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">📝</span>
+                        <h4>변수 활용</h4>
+                        <p>투표 옵션을 <strong>변수</strong>로 받아서 동적으로 버튼 생성<br>
+                        구글시트의 각 행 = 하나의 투표</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔄</span>
+                        <h4>양방향 상호작용</h4>
+                        <p>버튼 클릭 → 서버 처리 → 원본 메시지 수정<br>
+                        워크플로로는 불가능!</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔒</span>
+                        <h4>동시성 제어</h4>
+                        <p>LockService로 여러 사람이 동시에 투표해도 데이터 충돌 없음</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">⏰</span>
+                        <h4>트리거 활용</h4>
+                        <p>onEdit: 즉시 실행<br>
+                        checkDeadlines: 주기적 실행</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">구글시트 데이터 구조</h3>
+                <div class="diagram">
+                    <table class="comparison-table" style="font-size: 16px;">
+                        <thead>
+                            <tr>
+                                <th>채널ID</th>
+                                <th>날짜</th>
+                                <th>제목</th>
+                                <th>선택지1</th>
+                                <th>선택지2</th>
+                                <th>마감시간</th>
+                                <th>송부☑️</th>
+                                <th>메시지TS</th>
+                                <th>투표결과(JSON)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>C01ABC...</td>
+                                <td>2025-01-15</td>
+                                <td>오늘 저녁 뭐 먹을까요?</td>
+                                <td>치킨</td>
+                                <td>피자</td>
+                                <td>18:00</td>
+                                <td>✅</td>
+                                <td>'1234.5678</td>
+                                <td>{"치킨": ["@user1"], "피자": ["@user2"]}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="margin-top: 30px;">이 사례에서 배운 핵심 개념</h3>
+                <div class="step-box">
+                    <strong>✅ Event Subscription</strong>: 버튼 클릭 같은 이벤트를 감지하는 방법
+                </div>
+                <div class="step-box">
+                    <strong>✅ Block Kit</strong>: 슬랙 메시지에 버튼, 이미지 등 풍부한 UI 요소 추가
+                </div>
+                <div class="step-box">
+                    <strong>✅ 메시지 수정</strong>: 새 메시지를 보내는 대신 기존 메시지를 업데이트하는 방법
+                </div>
+                <div class="step-box">
+                    <strong>✅ 구글시트 = DB</strong>: 복잡한 데이터베이스 없이도 충분히 작동
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px; text-align: center;">
+                    <h4 style="font-size: 24px;">💡 핵심 인사이트</h4>
+                    <p style="font-size: 20px; margin-top: 15px;">
+                        "단 200줄의 코드로 실시간 투표 시스템을 구축할 수 있습니다.<br>
+                        서버 비용 0원, 데이터베이스 설정 0분!"
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">19 / 29</div>
+        </section>
+
+        <!-- 슬라이드 20: 케이스 2-1 작가냥 발주 개요 -->
+        <section class="slide" id="slide-20">
+            <div class="content">
+                <span class="section-tag">실전 케이스 2</span>
+                <h2>📦 Case Study 2: 작가냥 발주 자동화</h2>
+                
+                <div class="highlight-box">
+                    <h4>📌 프로젝트 개요</h4>
+                    <p style="font-size: 20px;">
+                        매일 전날의 주문 데이터를 자동으로 수집하여 구글시트에 저장하고<br>
+                        슬랙으로 알림을 보내는 완전 자동화 시스템
+                    </p>
+                </div>
+
+                <div class="icon-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="icon-item">
+                        <span class="emoji">🎯</span>
+                        <h4>해결하려는 문제</h4>
+                        <p>• 매일 아침 수동으로 Redash 접속<br>
+                           • 데이터 복사 → 구글시트 붙여넣기<br>
+                           • 담당자들에게 일일이 공유<br>
+                           • 반복적이고 시간 낭비</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">✨</span>
+                        <h4>제공하는 해결책</h4>
+                        <p>• 매일 오전 8시 자동 실행<br>
+                           • Redash → 구글시트 자동 저장<br>
+                           • 슬랙 자동 알림<br>
+                           • 완전 무인 자동화</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">사용된 기술 스택</h3>
+                <div class="step-box">
+                    <strong>🛠️ 자동화 도구:</strong> <em>n8n</em> (노코드/로우코드 워크플로 자동화 도구)<br>
+                    <strong>📊 데이터 소스:</strong> <em>Redash</em> (사내 데이터 분석 도구)<br>
+                    <strong>💾 저장소:</strong> <em>구글시트</em> (수집된 데이터 저장)<br>
+                    <strong>📢 알림:</strong> <em>Slack API</em> (완료 알림 전송)<br>
+                    <strong>🔑 특징:</strong> <em>코드 없음!</em> 비주얼 드래그 앤 드롭으로 구축
+                </div>
+
+                <h3 style="margin-top: 30px;">워크플로 개요</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-direction: column; gap: 12px; font-size: 18px;">
+                        <div class="flow-box">⏰ Schedule Trigger<br>(매일 오전 8시)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📅 어제 날짜 생성<br>(JavaScript)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">🔄 Redash 쿼리 실행 요청<br>(HTTP POST)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">⏳ 대기<br>(쿼리 처리 시간)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">✅ 결과 조회<br>(HTTP GET)</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">📊 구글시트 저장</div>
+                        <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                        <div class="flow-box">💬 슬랙 알림 전송</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">20 / 29</div>
+        </section>
+
+        <!-- 슬라이드 21: 케이스 2-2 작가냥 발주 작동 원리 -->
+        <section class="slide" id="slide-21">
+            <div class="content">
+                <span class="section-tag">실전 케이스 2</span>
+                <h2>📦 작가냥 발주 - 작동 원리 상세</h2>
+
+                <h3>n8n 노드별 역할</h3>
+
+                <div class="step-box">
+                    <strong>1️⃣ Schedule Trigger</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 매일 오전 8시에 워크플로 자동 시작<br>
+                        • 사람이 없어도 알아서 실행되는 "트리거"<br>
+                        • 워크플로의 시작점
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>2️⃣ JavaScript Code Node (날짜 생성)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 오늘 날짜 - 1일 = 어제 날짜 계산<br>
+                        • YYYY-MM-DD 형식으로 포맷팅<br>
+                        • 이 날짜를 다음 노드로 전달
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>3️⃣ HTTP Request (Redash API 호출)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • Redash에 "어제 데이터 조회해줘" 요청<br>
+                        • POST → Redash 쿼리 실행 시작<br>
+                        • job_id 받아옴 (처리 진행 중 ID)
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>4️⃣ Wait Node (대기)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • Redash가 데이터 처리할 시간 부여<br>
+                        • 너무 빨리 결과 요청하면 아직 준비 안됨<br>
+                        • 일정 시간 대기 후 다음 단계로
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>5️⃣ HTTP Request (결과 조회)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • job_id로 결과 조회<br>
+                        • JSON 형태로 데이터 받아옴<br>
+                        • 배열 형태의 데이터 (여러 행)
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>6️⃣ Code Node (데이터 변환)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • JSON 배열을 개별 항목으로 분리<br>
+                        • 각 행이 별도 데이터가 되도록 변환<br>
+                        • 구글시트에 저장하기 좋은 형태로
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>7️⃣ Google Sheets Node (저장)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 변환된 데이터를 구글시트에 자동 저장<br>
+                        • appendOrUpdate 모드: 기존 데이터 유지하고 새 데이터 추가<br>
+                        • user_id 기준으로 중복 확인
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>8️⃣ Slack Node (알림)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 지정된 슬랙 채널에 완료 알림<br>
+                        • "○○ 일자 데이터 ○건 스크랩 완료" 메시지<br>
+                        • 구글시트 링크 포함
+                    </p>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px;">
+                    <h4>🔍 왜 n8n을 사용했나요?</h4>
+                    <p style="font-size: 18px;">
+                        • <strong>비주얼 인터페이스</strong>: 코드 없이 드래그 앤 드롭<br>
+                        • <strong>다양한 통합</strong>: Redash, Slack, Google Sheets 모두 지원<br>
+                        • <strong>에러 처리</strong>: 실패 시 재시도, 알림 등 자동 처리<br>
+                        • <strong>디버깅 쉬움</strong>: 각 단계별 데이터 확인 가능
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">21 / 29</div>
+        </section>
+
+        <!-- 슬라이드 22: 케이스 2-3 작가냥 발주 핵심 배움 -->
+        <section class="slide" id="slide-22">
+            <div class="content">
+                <span class="section-tag">실전 케이스 2</span>
+                <h2>📦 작가냥 발주 - 핵심 포인트 & 배운 점</h2>
+
+                <h3>이 사례의 특별한 점</h3>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">🎨</span>
+                        <h4>노코드/로우코드</h4>
+                        <p><strong>코드를 거의 쓰지 않음</strong><br>
+                        비주얼 워크플로로 구축<br>
+                        JavaScript는 날짜 계산용으로만 사용</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔄</span>
+                        <h4>여러 시스템 통합</h4>
+                        <p>Redash + 구글시트 + 슬랙<br>
+                        각각 별도 로그인/API 필요<br>
+                        n8n이 모두 연결</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">⏰</span>
+                        <h4>완전 자동화</h4>
+                        <p>사람 개입 0%<br>
+                        매일 자동 실행<br>
+                        에러 발생 시에만 확인</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">💰</span>
+                        <h4>비용 효율</h4>
+                        <p>매일 10분 절약 = 연간 40시간<br>
+                        사람의 실수 방지<br>
+                        서버 비용 최소화</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">Redash → n8n → Google Sheets 흐름</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="justify-content: space-between;">
+                        <div class="flow-box" style="min-width: 180px; background: #e3f2fd;">
+                            📊 Redash<br>
+                            <span style="font-size: 14px;">(데이터 분석 도구)</span><br>
+                            SQL 쿼리 실행
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" style="min-width: 180px; background: #f3e5f5;">
+                            🔄 n8n<br>
+                            <span style="font-size: 14px;">(자동화 도구)</span><br>
+                            데이터 변환 & 라우팅
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-box" style="min-width: 180px; background: #e8f5e9;">
+                            📊 구글시트<br>
+                            <span style="font-size: 14px;">(저장소)</span><br>
+                            영구 보관 & 협업
+                        </div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">이 사례에서 배운 핵심 개념</h3>
+                <div class="step-box">
+                    <strong>✅ 워크플로 자동화</strong>: 여러 단계를 순차적으로 자동 실행하는 방법
+                </div>
+                <div class="step-box">
+                    <strong>✅ API 통합</strong>: 서로 다른 서비스들을 연결하는 방법 (Redash API, Google Sheets API, Slack API)
+                </div>
+                <div class="step-box">
+                    <strong>✅ 비동기 처리</strong>: 시간이 걸리는 작업(Redash 쿼리)을 기다리는 방법
+                </div>
+                <div class="step-box">
+                    <strong>✅ 데이터 변환</strong>: API 응답을 다른 시스템이 이해할 수 있는 형태로 변환
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px; text-align: center;">
+                    <h4 style="font-size: 24px;">💡 핵심 인사이트</h4>
+                    <p style="font-size: 20px; margin-top: 15px;">
+                        "코드를 직접 작성하지 않아도 n8n 같은 노코드 도구로<br>
+                        복잡한 업무 자동화가 가능합니다!<br>
+                        중요한 것은 '어떤 흐름으로 동작해야 하는지' 이해하는 것"
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">22 / 29</div>
+        </section>
+
+        <!-- 슬라이드 23: 케이스 3-1 Review Scrapper 개요 -->
+        <section class="slide" id="slide-23">
+            <div class="content">
+                <span class="section-tag">실전 케이스 3</span>
+                <h2>⭐ Case Study 3: App Review Scrapper</h2>
+                
+                <div class="highlight-box">
+                    <h4>📌 프로젝트 개요</h4>
+                    <p style="font-size: 20px;">
+                        구글 플레이스토어와 애플 앱스토어의 앱 리뷰를 자동으로 수집하여<br>
+                        구글시트에 저장하고 슬랙으로 실시간 알림을 보내는 모니터링 시스템
+                    </p>
+                </div>
+
+                <div class="icon-grid" style="grid-template-columns: repeat(2, 1fr);">
+                    <div class="icon-item">
+                        <span class="emoji">🎯</span>
+                        <h4>해결하려는 문제</h4>
+                        <p>• 매일 앱스토어 접속해서 리뷰 확인<br>
+                           • 신규 리뷰 놓치기 쉬움<br>
+                           • 여러 앱 관리 시 더욱 복잡<br>
+                           • 개발자 답변 관리 어려움</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">✨</span>
+                        <h4>제공하는 해결책</h4>
+                        <p>• 일일 자동 리뷰 수집<br>
+                           • 슬랙으로 즉시 알림<br>
+                           • 개발자 답변을 스레드로 연결<br>
+                           • 중복 방지 & 이력 관리</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">사용된 기술 스택</h3>
+                <div class="step-box">
+                    <strong>🛠️ 서버:</strong> <em>Google Apps Script</em> (24시간 실행)<br>
+                    <strong>📊 데이터베이스:</strong> <em>구글시트</em> (리뷰 저장, Slack_Map으로 중복 관리)<br>
+                    <strong>🔍 크롤링:</strong> <em>Playwright</em> (구글 플레이) + <em>XML 파싱</em> (애플 RSS)<br>
+                    <strong>🔑 슬랙 기능:</strong> <em>Bot Token</em> (메시지 전송), <em>Thread 댓글</em> (개발자 답변)<br>
+                    <strong>⏰ 실행:</strong> <em>시간 기반 트리거</em> (매일 특정 시간)
+                </div>
+
+                <h3 style="margin-top: 30px;">시스템 아키텍처</h3>
+                <div class="diagram">
+                    <div class="flow-chart" style="flex-wrap: wrap; gap: 20px;">
+                        <div class="flow-box" style="background: #fff3cd;">📱<br>구글 플레이</div>
+                        <div style="font-size: 24px;">→</div>
+                        <div class="flow-box" style="background: #d4edda;">🤖<br>Playwright<br>스크래퍼</div>
+                        <div style="font-size: 24px; width: 100%; text-align: center;">↓</div>
+                        <div class="flow-box" style="background: #cce5ff; width: 100%;">🖥️ Google Apps Script (중앙 처리)</div>
+                        <div style="font-size: 24px; width: 100%; text-align: center;">↓</div>
+                        <div class="flow-box" style="background: #f8d7da;">🍎<br>애플 앱스토어</div>
+                        <div style="font-size: 24px;">→</div>
+                        <div class="flow-box" style="background: #d4edda;">📄<br>XML<br>RSS</div>
+                        <div style="font-size: 24px; width: 100%; text-align: center;">↓</div>
+                        <div class="flow-box" style="background: #e2e3e5; min-width: 150px;">📊 구글시트<br>(데이터 저장)</div>
+                        <div style="font-size: 24px;">→</div>
+                        <div class="flow-box" style="background: #d1ecf1; min-width: 150px;">💬 슬랙<br>(실시간 알림)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-number">23 / 29</div>
+        </section>
+
+        <!-- 슬라이드 24: 케이스 3-2 Review Scrapper 작동 원리 -->
+        <section class="slide" id="slide-24">
+            <div class="content">
+                <span class="section-tag">실전 케이스 3</span>
+                <h2>⭐ Review Scrapper - 작동 원리 상세</h2>
+
+                <h3>핵심 기능별 설명</h3>
+
+                <div class="step-box">
+                    <strong>1️⃣ triggerReviewScrapers (메인 함수)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • App_List 시트에서 앱 목록 읽기<br>
+                        • 각 앱의 storeType 확인 (google/apple)<br>
+                        • 스토어별 적절한 수집 함수 호출<br>
+                        • 시간 기반 트리거로 자동 실행 (매일 1회)
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>2️⃣ 구글 플레이스토어 수집 (Playwright)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 외부 Playwright 서버에 HTTP POST 요청<br>
+                        • appId와 appName 전달<br>
+                        • Playwright가 브라우저로 실제 페이지 접속하여 크롤링<br>
+                        • 수집된 리뷰 데이터를 JSON으로 받아옴<br>
+                        • doPost() 함수로 처리
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>3️⃣ 애플 앱스토어 수집 (XML RSS)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • 애플이 제공하는 공식 RSS 피드 사용<br>
+                        • XML 형태로 최신 리뷰 제공 (최대 50개)<br>
+                        • XmlService로 파싱하여 데이터 추출<br>
+                        • 최근 10일 리뷰만 필터링
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>4️⃣ 중복 방지 로직</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • <strong>Reviews 시트</strong>: reviewId로 중복 확인<br>
+                        • <strong>Slack_Map 시트</strong>: 슬랙 포스팅 이력 관리<br>
+                        • 시트에서 행 삭제해도 재포스팅 안 됨 (Slack_Map 덕분)<br>
+                        • Set 자료구조로 메모리 내 빠른 조회
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>5️⃣ 슬랙 포스팅</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • <code>chat.postMessage</code>로 리뷰 개별 포스팅<br>
+                        • 리뷰 내용을 멀티라인 인용구(>>>)로 표시<br>
+                        • 메시지 TS(timestamp) 저장 → 스레드 참조용<br>
+                        • 개발자 답변 있으면 <code>chat.postMessage</code>로 스레드 댓글 추가
+                    </p>
+                </div>
+
+                <div class="step-box">
+                    <strong>6️⃣ Recency Gating (최근 데이터 필터링)</strong><br>
+                    <p style="margin-top: 10px; padding-left: 20px; color: #4a5568;">
+                        • LOOKBACK_DAYS (10일) 설정으로 오래된 리뷰 스킵<br>
+                        • 예외: 오래된 리뷰라도 개발자 답변이 최근이면 포함<br>
+                        • MAX_REVIEWS_TO_PROCESS (30개) 한도로 과부하 방지
+                    </p>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px;">
+                    <h4>🔍 사용된 주요 API</h4>
+                    <p style="font-size: 18px;">
+                        • <strong>UrlFetchApp.fetch()</strong>: HTTP 요청 (Playwright 서버, 슬랙 API)<br>
+                        • <strong>XmlService.parse()</strong>: 애플 RSS XML 파싱<br>
+                        • <strong>SpreadsheetApp</strong>: 구글시트 읽기/쓰기<br>
+                        • <strong>chat.postMessage</strong>: 슬랙 메시지 & 스레드 댓글
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">24 / 29</div>
+        </section>
+
+        <!-- 슬라이드 25: 케이스 3-3 Review Scrapper 핵심 배움 -->
+        <section class="slide" id="slide-25">
+            <div class="content">
+                <span class="section-tag">실전 케이스 3</span>
+                <h2>⭐ Review Scrapper - 핵심 포인트 & 배운 점</h2>
+
+                <h3>데이터 구조 (3개 시트 활용)</h3>
+                <div class="icon-grid" style="grid-template-columns: 1fr;">
+                    <div class="icon-item">
+                        <span class="emoji">📋</span>
+                        <h4>1. App_List 시트</h4>
+                        <p><strong>수집할 앱 목록 관리</strong><br>
+                        컬럼: App ID | App Name<br>
+                        예: com.example.app | 예제 앱 (구글 플레이)<br>
+                        예: id123456789 | 예제 앱 (애플 앱스토어)</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">📊</span>
+                        <h4>2. Reviews 시트</h4>
+                        <p><strong>수집된 모든 리뷰 저장</strong><br>
+                        컬럼: reviewId | App ID | App Name | author | date | rating | content | timestamp<br>
+                        개발자 답변도 별도 행으로 저장 (reviewId-dev)</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">🔗</span>
+                        <h4>3. Slack_Map 시트</h4>
+                        <p><strong>슬랙 포스팅 이력 관리</strong><br>
+                        컬럼: reviewId | ts (타임스탬프) | thread<br>
+                        중복 포스팅 방지 핵심 데이터</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 30px;">Thread (스레드) 활용</h3>
+                <div class="diagram">
+                    <div class="step-box">
+                        <strong>💬 부모 메시지</strong>: 원본 리뷰 (저장된 ts: 1234567890.123456)
+                    </div>
+                    <div style="text-align: center; font-size: 24px; margin: 10px 0;">↓ thread_ts 참조</div>
+                    <div class="step-box">
+                        <strong>💬 스레드 댓글</strong>: 개발자 답변 (부모의 ts를 thread_ts로 사용)
+                    </div>
+                    <p style="margin-top: 15px; text-align: center; color: #4a5568; font-size: 18px;">
+                        → 리뷰와 답변이 하나의 스레드로 묶여서 보기 편함!
+                    </p>
+                </div>
+
+                <h3 style="margin-top: 30px;">이 사례에서 배운 핵심 개념</h3>
+                <div class="step-box">
+                    <strong>✅ 외부 API 연동</strong>: Playwright 서버처럼 외부 서비스를 호출하는 방법
+                </div>
+                <div class="step-box">
+                    <strong>✅ XML 파싱</strong>: 웹에서 제공하는 다양한 데이터 형식 처리
+                </div>
+                <div class="step-box">
+                    <strong>✅ Thread 댓글</strong>: 슬랙 메시지를 스레드로 연결하여 맥락 유지
+                </div>
+                <div class="step-box">
+                    <strong>✅ 데이터 정규화</strong>: timestamp 소수점 손실 방지, 문자열 변환 등 세심한 데이터 관리
+                </div>
+                <div class="step-box">
+                    <strong>✅ 멀티 스토어 지원</strong>: 구글/애플 각각 다른 수집 방법을 하나의 시스템으로 통합
+                </div>
+
+                <div class="highlight-box" style="margin-top: 30px; background: #fff3cd; border-left-color: #ffc107;">
+                    <h4>🔍 공통점 발견!</h4>
+                    <p style="font-size: 20px;">
+                        세 가지 케이스 모두 <strong>Google Apps Script (서버 역할)</strong>와 
+                        <strong>구글시트 (데이터베이스 역할)</strong>를 활용했습니다.<br>
+                        즉, <em>별도 서버나 DB 없이</em> 구글 도구만으로 충분히 구축 가능합니다!
+                    </p>
+                </div>
+
+                <div class="highlight-box" style="margin-top: 20px; text-align: center;">
+                    <h4 style="font-size: 24px;">💡 핵심 인사이트</h4>
+                    <p style="font-size: 20px; margin-top: 15px;">
+                        "961줄의 코드지만, 대부분은 데이터 처리 로직입니다.<br>
+                        핵심 개념은 '외부 데이터 수집 → 저장 → 알림'이라는 단순한 흐름!<br>
+                        복잡해 보여도 한 단계씩 나누면 이해할 수 있습니다."
+                    </p>
+                </div>
+            </div>
+            <div class="slide-number">25 / 29</div>
+        </section>
+
+        <!-- Part 3 구분자 -->
+        <section class="slide section-divider" id="slide-part3">
+            <h2>Part 3<br>요약 및 Q&A</h2>
+        </section>
+
+        <!-- 슬라이드 18: 비교 -->
+        <section class="slide" id="slide-18">
+            <div class="content">
+                <h2>🎯 그래서, 둘 중 뭘 써야 할까요?</h2>
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>구분</th>
+                            <th>🏁 슬랙 워크플로 (No-Code)</th>
+                            <th>🤖 슬랙봇 (Pro-Code)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>누가 만드나?</td>
+                            <td><strong>누구나</strong><br>(기획자, 마케터, PM...)</td>
+                            <td><strong>개발자</strong><br>(혹은 개발 지식이 있는 분)</td>
+                        </tr>
+                        <tr>
+                            <td>핵심 기능</td>
+                            <td>정해진 트리거 + 간단한 액션<br>(폼, 알림)</td>
+                            <td>거의 모든 것<br>(API 연동, 복잡한 로직)</td>
+                        </tr>
+                        <tr>
+                            <td>서버</td>
+                            <td><strong>필요 없음</strong><br>(Slack 내장)</td>
+                            <td><strong>필수</strong><br>(AWS, GCP, 사내 서버 등)</td>
+                        </tr>
+                        <tr>
+                            <td>주요 용도</td>
+                            <td>간단한 알림, 양식 수집,<br>정해진 공지</td>
+                            <td>실시간 상호작용, 외부 서비스 연동,<br>사내 시스템 통합</td>
+                        </tr>
+                        <tr>
+                            <td>예시</td>
+                            <td>/휴가신청 폼,<br>주간 리마인더</td>
+                            <td>/배포, 키워드 감지 봇,<br>실시간 장애 알림</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="slide-number">27 / 29</div>
+        </section>
+
+        <!-- 슬라이드 19: 요약 -->
+        <section class="slide" id="slide-19">
+            <div class="content">
+                <h2>📚 핵심 요약 (Takeaways)</h2>
+                <div class="icon-grid">
+                    <div class="icon-item">
+                        <span class="emoji">1️⃣</span>
+                        <h4>간단한 자동화</h4>
+                        <p>코딩 없는 <strong>워크플로 빌더</strong>로 지금 당장 시작하세요.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">2️⃣</span>
+                        <h4>복잡한 상호작용</h4>
+                        <p><strong>사내 시스템 연동</strong>이 필요하면 <strong>슬랙봇</strong> 개발을 고려하세요.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">3️⃣</span>
+                        <h4>4가지 핵심 기능</h4>
+                        <p><em>Webhook</em>, <em>Slash Command</em>, <em>Events</em>, <em>Bot Token (Scopes)</em>을 기억하세요.</p>
+                    </div>
+                    <div class="icon-item">
+                        <span class="emoji">4️⃣</span>
+                        <h4>자동화의 목적</h4>
+                        <p><strong>"반복적인 단순 작업"</strong>을 줄여 <strong>"더 중요한 일"</strong>에 집중하기 위함입니다.</p>
+                    </div>
+                </div>
+                <div class="highlight-box" style="margin-top: 40px; text-align: center;">
+                    <h4 style="font-size: 28px;">💡 시작이 반입니다!</h4>
+                    <p style="font-size: 22px; margin-top: 15px;">작은 자동화부터 시작해서 점차 확장해 나가세요.</p>
+                </div>
+            </div>
+            <div class="slide-number">28 / 29</div>
+        </section>
+
+        <!-- 슬라이드 20: Q&A -->
+        <section class="slide cover" id="slide-20">
+            <div class="content">
+                <h1>❓ Q&A</h1>
+                <p class="subtitle" style="margin-top: 60px; font-size: 32px;">질문이 있으시면 편하게 말씀해 주세요!</p>
+                <p class="meta" style="margin-top: 80px; font-size: 24px;">감사합니다. 🙏</p>
+            </div>
+            <div class="slide-number">29 / 29</div>
+        </section>
+    </div>
+
+    <div class="keyboard-hint">
+        ⌨️ 화살표 키(← →) 또는 스크롤로 슬라이드를 이동하세요
+    </div>
+
+    <script>
+        // 진행률 바 업데이트
+        const progressBar = document.getElementById('progress-bar');
+        const slidesContainer = document.getElementById('slides-container');
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        slidesContainer.addEventListener('scroll', () => {
+            const scrollTop = slidesContainer.scrollTop;
+            const scrollHeight = slidesContainer.scrollHeight - slidesContainer.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            progressBar.style.width = progress + '%';
+        });
+
+        // 키보드 네비게이션
+        let currentSlideIndex = 0;
+
+        function goToSlide(index) {
+            if (index >= 0 && index < totalSlides) {
+                currentSlideIndex = index;
+                slides[currentSlideIndex].scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                goToSlide(currentSlideIndex + 1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                goToSlide(currentSlideIndex - 1);
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                goToSlide(0);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                goToSlide(totalSlides - 1);
+            }
+        });
+
+        // 현재 슬라이드 감지 (스크롤 기반)
+        const observerOptions = {
+            root: slidesContainer,
+            threshold: 0.5
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    currentSlideIndex = Array.from(slides).indexOf(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        slides.forEach(slide => observer.observe(slide));
+
+        // 사이드바 토글
+        const navToggle = document.getElementById('nav-toggle');
+        const navSidebar = document.getElementById('nav-sidebar');
+
+        navToggle.addEventListener('click', () => {
+            navSidebar.classList.toggle('active');
+        });
+
+        // 사이드바 외부 클릭 시 닫기
+        document.addEventListener('click', (e) => {
+            if (!navSidebar.contains(e.target) && !navToggle.contains(e.target)) {
+                navSidebar.classList.remove('active');
+            }
+        });
+
+        // 사이드바 링크 클릭 시 닫기
+        const navLinks = navSidebar.querySelectorAll('a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navSidebar.classList.remove('active');
+            });
+        });
+
+        // 페이지 로드 시 첫 슬라이드로
+        window.addEventListener('load', () => {
+            slidesContainer.scrollTop = 0;
+        });
+
+        // 마우스 휠 스크롤 부드럽게
+        slidesContainer.style.scrollBehavior = 'smooth';
+    </script>
+</body>
+</html>
